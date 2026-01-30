@@ -4,7 +4,7 @@ image:
   tag: "1.1394.355"
   imagePullSecrets: {}
 
-replicaCount: 2
+replicaCount: 1
 
 securityContext:
   runAsNonRoot: true
