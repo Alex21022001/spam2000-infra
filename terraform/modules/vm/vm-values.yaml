@@ -1,0 +1,150 @@
+defaultDashboards:
+  dashboards:
+    victoriametrics-vmalert:
+      enabled: false
+
+defaultRules:
+  create: false
+
+vmsingle:
+  spec:
+    retentionPeriod: "${vm_retention}"
+    resources:
+      requests:
+        cpu: "${vm_cpu_request}"
+        memory: "${vm_memory_request}"
+      limits:
+        cpu: "${vm_cpu_limit}"
+        memory: "${vm_memory_limit}"
+    extraArgs:
+      memory.allowedPercent: "${vm_allowedPercent}"
+      search.maxPointsPerTimeseries: "${vm_maxPointsPerTimeseries}"
+      search.maxUniqueTimeseries: "${vm_maxUniqueTimeseries}"
+    storage:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: ${vm_storage_size}
+
+alertmanager:
+  enabled: false
+vmalert:
+  enabled: false
+
+defaultDatasources:
+  victoriametrics:
+    datasources:
+      - name: VictoriaMetrics
+        type: prometheus
+        access: proxy
+        isDefault: true
+        uid: "${vm_datasource_uid}"
+      - name: VictoriaMetrics (DS)
+        isDefault: false
+        access: proxy
+        type: victoriametrics-metrics-datasource
+
+grafana:
+  grafana.ini:
+    server:
+      domain: ${grafana_host}
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s${grafana_path}/"
+      serve_from_sub_path: true
+
+  ingress:
+    enabled: true
+    path: ${grafana_path}
+    hosts:
+      - ${grafana_host}
+
+  vmScrape:
+    spec:
+      endpoints:
+        - port: '{{ .Values.grafana.service.portName }}'
+          path: ${grafana_path}/metrics
+
+kubeControllerManager:
+  vmScrape:
+    spec:
+      jobLabel: jobLabel
+      namespaceSelector:
+        matchNames: [ ]
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: https
+          tlsConfig:
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            serverName: kubernetes
+            insecureSkipVerify: true
+
+kubeEtcd:
+  service:
+    port: 2381
+    targetPort: 2381
+
+  vmScrape:
+    spec:
+      jobLabel: jobLabel
+      namespaceSelector:
+        matchNames: [ ]
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: http
+          tlsConfig:
+            insecureSkipVerify: true
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+kubeScheduler:
+  vmScrape:
+    spec:
+      jobLabel: jobLabel
+      namespaceSelector:
+        matchNames: [ ]
+      endpoints:
+        - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          port: http-metrics
+          scheme: https
+          tlsConfig:
+            insecureSkipVerify: true
+            caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+extraObjects:
+  - apiVersion: operator.victoriametrics.com/v1beta1
+    kind: VMPodScrape
+    metadata:
+      name: annotation-scrap
+    spec:
+      podMetricsEndpoints:
+        - scheme: http
+          interval: ${vm_pod_scrap_interval}
+          max_scrape_size: 64MB
+          relabelConfigs:
+            - sourceLabels:
+                [ __meta_kubernetes_pod_annotation_prometheus_io_scrape ]
+              action: keep
+              regex: "true"
+            - targetLabels:
+                [ __meta_kubernetes_pod_annotation_prometheus_io_scheme ]
+              action: replace
+              targetLabel: __scheme__
+              regex: (https?)
+            - sourceLabels:
+                [ __meta_kubernetes_pod_annotation_prometheus_io_path ]
+              action: replace
+              targetLabel: __metrics_path__
+              regex: (.+)
+            - sourceLabels:
+                [
+                  __address__,
+                  __meta_kubernetes_pod_annotation_prometheus_io_port,
+                ]
+              action: replace
+              targetLabel: __address__
+              regex: ([^:]+)(?::\d+)?;(\d+)
+              replacement: $1:$2
+      selector: { }
+      namespaceSelector:
+        any: true

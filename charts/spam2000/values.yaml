@@ -1,0 +1,80 @@
+image:
+  repository: "andriiuni/spam2000"
+  pullPolicy: IfNotPresent
+  tag: "1.1394.355"
+  imagePullSecrets: {}
+
+replicaCount: 1
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+podSecurityContext: {}
+podLabels: {}
+podAnnotations: # TODO
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "3000"
+env:
+  - name: HOME
+    value: "/tmp"
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  tls: {}
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+
+serviceAccount:
+  create: true
+  annotations: {}
+  automount: false
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  failureThreshold: 2
+  periodSeconds: 10
+  timeoutSeconds: 3
+  initialDelaySeconds: 5
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  failureThreshold: 3
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+volumeMounts: {}
+volumes: {}
+
+nodeSelector: {}
+affinity: {}
+tolerations: {}

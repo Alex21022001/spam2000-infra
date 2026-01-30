@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "spam2000.fullname" . }}
+  labels:
+    {{- include "spam2000.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "spam2000.selectorLabels" . | nindent 6 }}
