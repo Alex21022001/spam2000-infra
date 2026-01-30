@@ -96,6 +96,11 @@ variable "vm_cpu_limit" {
   type        = string
 }
 
+variable "vm_pod_scrap_interval" {
+  description = "Scrape interval for annotated pods"
+  type        = string
+}
+
 variable "vm_grafana_path" {
   description = "Grafana subpath (must start with /)"
   type        = string
