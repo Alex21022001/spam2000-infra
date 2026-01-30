@@ -12,13 +12,13 @@ Before running the stack, ensure you have the following installed and available:
 ## Quick Start (One Command)
 To deploy everything run the command bellow from root dir of the project:
 ```shell
-cd terraform && chmod +x bootstrap.sh && ./bootstrap.sh
+chmod +x bootstrap.sh && ./bootstrap.sh
 ```
 
 ## Cleanup
 Terraform destroy will delete your entire Minikube cluster and all managed resources. Use with caution. Run the following command from the root dir of the project.
 ```shell
-cd terraform && terraform destroy -var-file="local.tfvars" -auto-approve
+terraform -chdir=terraform destroy -var-file="local.tfvars" -auto-approve
 ```
 
 ## Resources Created

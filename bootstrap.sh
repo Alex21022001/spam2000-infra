@@ -2,16 +2,16 @@
 set -e
 
 echo "Initializing Terraform..."
-terraform init
+terraform -chdir=terraform init
 
 echo "Starting the deployment (this may take 5-10 minutes)..."
-terraform apply -var-file="local.tfvars" -auto-approve
+terraform -chdir=terraform apply -var-file="local.tfvars" -auto-approve
 
 echo "Deployment complete! Fetching access details..."
 
-ARGOCD_PASS=$(terraform output -raw argocd_password)
-GRAFANA_USER=$(terraform output -raw grafana_admin_user)
-GRAFANA_PASS=$(terraform output -raw grafana_admin_password)
+ARGOCD_PASS=$(terraform -chdir=terraform output -raw argocd_password)
+GRAFANA_USER=$(terraform -chdir=terraform output -raw grafana_admin_user)
+GRAFANA_PASS=$(terraform -chdir=terraform output -raw grafana_admin_password)
 
 echo "--------------------------------------------------------"
 echo "ACCESS DETAILS"
